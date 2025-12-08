@@ -27,3 +27,10 @@ export function verifyToken(t: string | undefined | null) {
 
 // ✅ tests-д нийцүүлэх alias
 export const verifyJwt = verifyToken;
+
+export function parseBearer(header?: string | null): string | null {
+  if (!header) return null;
+  const [type, token] = header.split(" ");
+  if (type === "Bearer" && token) return token;
+  return null;
+}
