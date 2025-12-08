@@ -50,45 +50,39 @@ auth.post(
  * POST /auth/login
  * Имэйл/утас + нууц үгээр нэвтрэх (+ 2FA баталгаажуулалт)
  */
-auth.post(
-  "/login",
-  async (req: Request, res: Response, next: NextFunction) => {
-    try {
-      const parsed = LoginZ.safeParse(req.body);
-      if (!parsed.success) throw new ValidationError();
+auth.post('/login', async (req, res) => {
+  const parsed = LoginZ.safeParse(req.body);
+  if (!parsed.success) return res.status(400).json(parsed.error);
+  const { email_or_phone, password, totp } = parsed.data;
 
-      const { email_or_phone, password, totp } = parsed.data;
-
-      const user = await User.findOne({
-        $or: [{ email: email_or_phone }, { phone: email_or_phone }],
-      });
-
-      const ok =
-        user && user.password ? await verifyPassword(password, user.password) : false;
-      if (!ok) throw new AuthError("Invalid credentials");
-
-      if (user!.twofa_enabled) {
-        const verified =
-          !!totp &&
-          !!user!.twofa_secret &&
-          otplib.authenticator.verify({
-            token: totp,
-            secret: user!.twofa_secret,
-          });
-        if (!verified) throw new AuthError("Invalid 2FA code");
-      }
-
-      const token = signToken(
-        (user!._id as mongoose.Types.ObjectId).toString(),
-        user!.role
-      );
-
-      return res.json({ access_token: token, token_type: "bearer" });
-    } catch (e) {
-      next(e);
+  try {
+    // ✅ DB бэлэн биш (0,2,3) үед: шууд 401 буцаана (buffering timeout-оос сэргийлнэ)
+    // 0 = disconnected, 1 = connected, 2 = connecting, 3 = disconnecting
+    if (mongoose.connection.readyState !== 1) {
+      return res.status(401).json({ message: 'Invalid credentials' });
     }
+
+    const user = await User.findOne({
+      $or: [{ email: email_or_phone }, { phone: email_or_phone }]
+    });
+
+    if (!user) return res.status(401).json({ message: 'Invalid credentials' });
+
+    const okPass = await verifyPassword(password, user.password!);
+    if (!okPass) return res.status(401).json({ message: 'Invalid credentials' });
+
+    if (user.twofa_enabled) {
+      const okTotp = totp && otplib.authenticator.verify({ token: totp, secret: user.twofa_secret! });
+      if (!okTotp) return res.status(401).json({ message: 'Invalid 2FA code' });
+    }
+
+    const token = signToken((user._id as mongoose.Types.ObjectId).toString(), user.role);
+    return res.json({ access_token: token, token_type: 'bearer' });
+  } catch (_e) {
+    // 🔒 Аюулгүй байдлын үүднээс дотоод алдааг ил гаргахгүй — нэг мөр 401
+    return res.status(401).json({ message: 'Invalid credentials' });
   }
-);
+});
 
 /**
  * POST /auth/2fa/setup
