@@ -13,3 +13,11 @@
 ```bash
 npm install
 npm run dev
+
+
+- CI: `.github/workflows/ci.yml`
+- Coverage босго: 80% (Jest coverageThreshold)
+- Командууд:
+  - `npm run typecheck`
+  - `npm run test` / `npm run coverage`
+  - `npm run test:ci` (CI орчинд)

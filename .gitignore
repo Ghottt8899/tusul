@@ -1,15 +1,21 @@
 cat > .gitignore <<'EOF'
-# Node / TS
 node_modules
 dist
 coverage
 .env
 .DS_Store
 
-# Caches & local data
-.cache
 **/.cache
 storage
 uploads
 tmp
 EOF
+node_modules
+dist
+coverage
+.env
+.DS_Store
+.cache
+**/.cache
+storage/*
+!storage/.gitkeep
