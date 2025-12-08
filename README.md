@@ -21,3 +21,9 @@ npm run dev
   - `npm run typecheck`
   - `npm run test` / `npm run coverage`
   - `npm run test:ci` (CI орчинд)
+
+
+  ## Лаб 7 — Unit Test with Mocking & Stubbing
+- `jest.mock`, `jest.spyOn`, `mockResolvedValue` ашиглав.
+- Controller болон service хоорондын хамаарлыг тусгаарлан туршсан.
+- Жишээ: Auth controller дээр fake security layer ашигласан.
